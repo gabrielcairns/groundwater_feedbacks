@@ -79,7 +79,7 @@ set(aq, 'XLim', [0 1000], 'YLim', [0 210], 'XTickLabel', '');
 plot(ah, xdkm*2*XH, Hd*bedf(2*XH), 'k-', 'LineWidth', 2)
 
 %kgtp = [11 26 51 101 201];
-kgtp = [1 32 57 87 125];
+kgtp = [11 32 57 87 125];
 % Initial and final state
 %load(sprintf('retreat_advance/IC_m%g_K%g',mrate,K),'HUxN')
 load('retreat_advance/max_xg_m1_K1.mat','HUxN');
