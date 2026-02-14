@@ -29,7 +29,7 @@ if ~isfolder('steady_states');   mkdir('steady_states');  end
 if ~isfolder('figures');   mkdir('figures');  end
 
 clrs = flip(cmocean('thermal',7));
-clrs2 = (cmocean('haline',8));
+clrs2 = cmocean('haline',8);
 
 % Steady state list: C=5 throughout
 % Begin with: m=K=0. use rough initial guess
@@ -95,6 +95,16 @@ end
 HUxN1 = load('steady_states/SS_m1_K0.mat','HUxN').HUxN;
 HUxN2 = load('steady_states/SS_m8_K0.mat','HUxN').HUxN; 
 
+P1 = HUxN1(1:J+1)+ bedf(HUxN1(2*J+4)*XH)/(1-delta);
+G1 = HUxN1(2*J+4)^(-1)*(P1(2:J+1)-P1(1:J))./(XH(2:J+1)-XH(1:J));
+Nouter1 = -G1./(HUxN1(2*J+4)*1*XU(2:J+1));
+Ninner1 = P1/E;
+
+P2 = HUxN2(1:J+1)+ bedf(HUxN2(2*J+4)*XH)/(1-delta);
+G2 = HUxN2(2*J+4)^(-1)*(P2(2:J+1)-P2(1:J))./(XH(2:J+1)-XH(1:J));
+Nouter2 = -G2./(HUxN2(2*J+4)*8*XU(2:J+1));
+Ninner2 = P2/E;
+
 % Streamline plots for low/ high m and K->0.
 figure(2); clf; 
 set(gcf(),'Position',[170   700   950   550])
@@ -121,8 +131,16 @@ plot(a2H2, xdkm*HUxN2(2*J+4)*[1 1], Hd*bedf(HUxN2(2*J+4))*[1 -delta/(1-delta)] ,
 plot(a2N1, xdkm*HUxN1(2*J+4)*XH, Nd_MPa*HUxN1(2*J+5:3*J+5),'LineWidth',2,'Color',clrs2(6,:));
 plot(a2N2, xdkm*HUxN2(2*J+4)*XH, Nd_MPa*HUxN2(2*J+5:3*J+5),'LineWidth',2,'Color',clrs2(6,:));
 
+plot(a2N1,xdkm*HUxN1(2*J+4)*XU(2:J+1), Nd_MPa*Nouter1, '--' ,'Color', clrs2(4,:) , 'LineWidth',1);
+plot(a2N1,xdkm*HUxN1(2*J+4)*XH, Nd_MPa*Ninner1, ':' ,'Color', clrs2(2,:) , 'LineWidth',1);
+
+plot(a2N2,xdkm*HUxN2(2*J+4)*XU(2:J+1), Nd_MPa*Nouter2, '--' ,'Color', clrs2(4,:) , 'LineWidth',1);
+plot(a2N2,xdkm*HUxN2(2*J+4)*XH, Nd_MPa*Ninner2, ':' ,'Color', clrs2(2,:) , 'LineWidth',1);
+
 ylim(a2H1, [-3000 4000]);
 ylim(a2H2, [-3000 4000]);
+ylim(a2N1, [0 2]);
+ylim(a2N2, [0 1]);
 
 z = (-3000:10:0)/Hd;
 [Psi1,xx1,zz1] = make_SF(HUxN1(1:J+1),HUxN1(2*J+5:3*J+5),bedf(HUxN1(2*J+4)*XH),Hsbf(HUxN1(2*J+4)*XH),HUxN1(2*J+4)*XH,z,delta,E);
@@ -134,6 +152,7 @@ contour(a2H2, xdkm*xx2', Hd*zz2', Psi2,linspace(0.015^.2,(max(Psi2,[],'all')-0.0
 p2sl = a2H2.Children(1);
 
 legend(a2H2,[p2b,p2sb,p2h,p2sl],{'$b$','$b-H_{sb}$','$H+b$','Streamlines'},'location','northeast','FontSize',14,'Interpreter','latex','NumColumns',2);
+legend(a2N2,{'$N$','$E=0$','$\psi =0$'},'location','northeast','FontSize',14,'Interpreter','latex','NumColumns',2);
 
 
 text(a2H1,20,3500,'(a)(i)','Interpreter','latex','BackgroundColor','w','FontSize',14);
@@ -145,9 +164,12 @@ exportgraphics(figure(2),'figures/SL_K0.pdf','ContentType','vector')
 
 % Ice sheet and effective pressure for high m and varying K.
 figure(3); clf; set(gcf(),'Position',[ 250   400   600   700]) 
-a3q = subplot('Position', [.13 .71 .8 .15]);
-a3N = subplot('Position', [.13 .52 .8 .15]);
-a3H = subplot('Position', [.13 .25 .8 .25]);   
+% a3q = subplot('Position', [.13 .71 .8 .15]);
+% a3N = subplot('Position', [.13 .52 .8 .15]);
+% a3H = subplot('Position', [.13 .25 .8 .25]);   
+a3H = subplot('Position', [.13 .61 .8 .25]);
+a3q = subplot('Position', [.13 .42 .8 .15]);
+a3N = subplot('Position', [.13 .25 .8 .15]);   
 a3U = subplot('Position', [.13 .08 .8 .15]);  
 
 make_nice_axes(a3q,xdkm*1.8,'','$q_E$ / mm yr$^{-1}$','')
@@ -182,10 +204,13 @@ legend(a3q,{'$k_{sb} = 0$ m$^2$ $(K \ll 1)$','$k_{sb} = 3.3 \times 10^{-12}$ m$^
     '$k_{sb} = 6.6 \times 10^{-12}$ m$^2$','$k_{sb} = 9.8 \times 10^{-12}$ m$^2$'},...
     'Position', [.13 .88 .8 .1],'FontSize',14,'Interpreter','latex','Numcolumns',2);
   
-text(a3q,20,800,'(a)','Interpreter','latex','BackgroundColor','w','FontSize',14);
-text(a3H,20,1900,'(c)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+% text(a3q,20,800,'(a)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+% text(a3N,20,2.5,'(b)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+% text(a3H,20,1900,'(c)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+text(a3H,20,1900,'(a)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+text(a3q,20,800,'(b)','Interpreter','latex','BackgroundColor','w','FontSize',14);
+text(a3N,20,2.5,'(c)','Interpreter','latex','BackgroundColor','w','FontSize',14);
 text(a3U,20,400,'(d)','Interpreter','latex','BackgroundColor','w','FontSize',14);
-text(a3N,20,2.5,'(b)','Interpreter','latex','BackgroundColor','w','FontSize',14);
 
 a3H.YLabel.Position(1) = -80;
 a3N.YLabel.Position(1) = -80;
