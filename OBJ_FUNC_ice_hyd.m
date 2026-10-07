@@ -15,6 +15,7 @@ J = (length(XA)-3)/2;
 delta = params.delta;   eps = params.eps;   E = params.E;
 lambda = params.lambda;     n = params.n;   mW = params.mW;
 C = params.C;   K = params.K;   Sigma = params.Sigma;
+xi = params.xi;
 
 % Functions
 bedf = funcs.bedf;  accf = funcs.accf;
@@ -78,7 +79,7 @@ fun(J+2) = U(J+2)-U(J+1) - xg*(XU(J+2)-XU(J+1))*(delta*H(J+1)/(8*eps)).^n;
 Hp = [H(1)+bed(2)-bed(1); H]; 
 XHp = [-XH(2); XH];
 
-% Advection terms (downwind method)
+% Advection terms (upwind method)
 HU = Hp.*U(1:J+2); 
 divflux = (xg^(-1))*(HU(2:J+2)-HU(1:J+1))./(XU(2:J+2)-XU(1:J+1)); 
 
@@ -95,18 +96,25 @@ fun(2*J+4) = H(J+1)+bed(J+1)/(1-delta);
 %% Subglacial hydrology equation
 
 % Hydraulic potential
-Psi = H - E*N + bed/(1-delta) ;
+%Psi = H - E*N + bed/(1-delta) ;
+Psi = (1-delta)*H - E*N + bed ;
 
 % Flux (encapsulating no flux, but including melt into first cell)
 flux1 = (xg^(-1))*(1./N(1:J) + K*Hsbf(XU(2:J+1)) ).* (Psi(2:J+1)-Psi(1:J))./((XH(2:J+1)-XH(1:J)));
-flux = [xg*(XU(2)-XH(1))*( meltf(xg*XH(1)) - Sigma*Hsbf(xg*XH(1))*(dHdt(1) - GLdrift(1)) ) ; flux1];
+flux = [xg*(XU(2)-XH(1))*( meltf(xg*XH(1)) - (1-xi)*(1-delta)*Sigma*Hsbf(xg*XH(1))*(dHdt(1) - GLdrift(1)) ) ; flux1];
 
 % Term due to time-dependent grid stretching
 GLdriftN = (xgt/xg).*XH(1:J).*( (N(2:J+1)-N(1:J))./(XH(2:J+1)-XH(1:J)));
 
 % Mass balance
+% fun(2*J+5:3*J+4) =  (-lambda*N(1:J).^(-2) -  E*Sigma*Hsbf(xg*XH(1:J)) ).*(dNdt(1:J)-GLdriftN) - ...
+%     (meltf(xg*XH(1:J)) - Sigma*Hsbf(xg*XH(1:J)).*(dHdt(1:J) - GLdrift(1:J)) ...
+%     +(xg^(-1))*(flux(2:J+1)-flux(1:J))./(XU(2:J+1)-XU(1:J)) );
+% fun(2*J+5:3*J+4) =  -lambda*N(1:J).^(-2).*(dNdt(1:J)-GLdriftN) - ...
+%      (meltf(xg*XH(1:J)) - Sigma*Hsbf(xg*XH(1:J)).*(dHdt(1:J) - GLdrift(1:J)) ...
+%      +(xg^(-1))*(flux(2:J+1)-flux(1:J))./(XU(2:J+1)-XU(1:J)) );
 fun(2*J+5:3*J+4) =  (-lambda*N(1:J).^(-2) -  E*Sigma*Hsbf(xg*XH(1:J)) ).*(dNdt(1:J)-GLdriftN) - ...
-    (meltf(xg*XH(1:J)) - Sigma*Hsbf(xg*XH(1:J)).*(dHdt(1:J) - GLdrift(1:J)) ...
+    (meltf(xg*XH(1:J)) - (1-xi)*(1-delta)*Sigma*Hsbf(xg*XH(1:J)).*(dHdt(1:J) - GLdrift(1:J)) ...
     +(xg^(-1))*(flux(2:J+1)-flux(1:J))./(XU(2:J+1)-XU(1:J)) );
 
 % Zero effective pressure at grounding line

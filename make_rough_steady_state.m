@@ -32,7 +32,7 @@ for k = length(XH):-1:2
     H_R(k-1) = H_R(k)- xg_R*(XH(k)-XH(k-1))*HxT;
 
     % Integrating ODE for N given H
-    NxT = ( HxT + bedxf(xg_R*XH(k))/(1-delta) + ( N_R(k)./(1 + K*Hsbf(xg_R*XH(k))*N_R(k)) ).*intmeltf(xg_R*XH(k)) )/E ;
+    NxT = ( (1-delta)*HxT + bedxf(xg_R*XH(k))+ ( N_R(k)./(1 + K*Hsbf(xg_R*XH(k))*N_R(k)) ).*intmeltf(xg_R*XH(k)) )/E ;
     N_R(k-1) = N_R(k)- xg_R*(XH(k)-XH(k-1))*NxT;
 end
 

@@ -9,7 +9,7 @@ s_per_yr = 365.25 * 24 * 3600;
 % Gravity and densities
 scales.g = 9.8; 
 scales.rhoi = 900; 
-rhow = 1000; 
+scales.rhow = 1000; 
 
 % Lengthscale
 xd = 5e5; 
@@ -27,7 +27,8 @@ A = 1e-25;
 params.n = 3; 
 
 % Melt rate (10 mm/yr)
-scales.md_mmyr = 10;
+%scales.md_mmyr = 10;
+scales.md_mmyr = 1;
 md = scales.md_mmyr /(1e3*s_per_yr) ;
 
 % Finding scales derived from ice sheet model
@@ -40,19 +41,23 @@ ud = xd/scales.td;
 scales.ud_myr = ud*s_per_yr;
 
 % Parameters from ice sheet model
-params.delta = 1-scales.rhoi/rhow;
+params.delta = 1-scales.rhoi/scales.rhow;
 params.eps = (2*scales.rhoi*scales.g*scales.Hd*(A*scales.td)^(1/params.n))^(-1);
 
 % Parameters and scales for the subglacial hydrology
 params.E = 0.05;
 
-Nd = params.E*(scales.rhoi*scales.g*scales.Hd);
+
+%Nd = params.E*(scales.rhoi*scales.g*scales.Hd);
+Nd = params.E*(scales.rhow*scales.g*scales.Hd);
 scales.Nd_MPa = Nd*1e-6;
 Ed = 1e5;
 hd = Ed/Nd;
 
 params.lambda = hd/(md*scales.td);
 params.C = 5;
+
+Cc = params.C * Cw*ud^params.mW / Nd;
 
 % Functions for geometry of bed and sedimentary basin
 funcs.bedf = @(x) -100/scales.Hd - .1*x;  
@@ -62,5 +67,13 @@ funcs.Hsbf = @(x) 2000/scales.Hd*ones(size(x));
 % Accumulation functions (default to dimensionless a=1)
 funcs.accf = @(x) ones(size(x));
 funcs.intaccf = @(x) x;
+
+params.xi = 0.8;
+%k = (1e-3*xd^2*md)/(scales.rhoi*scales.g*scales.Hd*hd);
+k = (1e-3*xd^2*md)/(scales.rhow*scales.g*scales.Hd*hd);
+scales.K_to_ksb = k*hd/scales.Hd;
+%scales.Sigma_to_Ss = rhow*md*scales.td/(scales.rhoi*(1-params.xi)*scales.Hd^2);
+scales.Sigma_to_Ss = md*scales.td/scales.Hd^2;
+
 
 end

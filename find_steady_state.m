@@ -9,7 +9,7 @@ function find_steady_state(filename,initfilename,XA,params,funcs)
 % If there's already a file with the name 'filename', this code does nothing
 
 % We find the steady state by time-evolving, with a variable timestep, until the change in the norm of
-% HUxN is less than a specified tolerance (0.01) times the timestep.
+% HUxN is less than a specified tolerance (0.001) times the timestep.
 % If the solution fails to converge despite reducing the timestep beyond a
 % minimum (1e-5), or a max number of steps (1000), we give up
 
@@ -19,12 +19,16 @@ if ~isfile(filename)
     load(initfilename,'HUxN');
     params.Sigma = 0;
 
+    params.lambda = 0.001; % Use an artificially low value, as this helps promote fast convergence
+
     J = (length(XA)-3)/2;
-    
+    XH = XA(2:2:end-1);
+    XU = XA(1:2:end);
+
     % Initial timestep, max no. of steps, tolerance, minimum timestep
     dt= 0.01;
     maxnsteps = 1000;
-    tol = 1e-2;
+    tol = 1e-3;
     mindt = 1e-5;
 
     step = 1;
@@ -41,7 +45,11 @@ if ~isfile(filename)
             HUxN, optimoptions('fsolve','Display','off'));
 
         % Calculate change in norm
-        change = norm(HUxNn - HUxN);
+        %change = norm(HUxNn - HUxN);
+        resid = (HUxN - HUxNn).^2;
+        change = sqrt(trapz(XH, resid(1:J+1) )+...
+            trapz(XU, resid(J+2:2*J+3))+...
+            trapz(XH, resid(2*J+5:3*J+5) )+ resid(2*J+4));
 
         if ex>0
             % If fsolve worked, we update the values and proceed

@@ -1,16 +1,25 @@
-function retreat_or_advance(mode,mrate,K,Sigma)
+function retreat_or_advance(mode,mrate,K,Sigma, varargin)
 
 % Runs either the grounding line retreat or advance experiment for given parameter 
 % values m, K, Sigma, and saves the result in an appropriately named file
 
 % If a file whose name matches the desired case already exists, this code does nothing
 
-arguments
-    mode {mustBeMember(mode,["a","r"])} 
-    mrate {mustBeNumeric}
-    K {mustBeNumeric}
-    Sigma {mustBeNumeric}
-end  
+if ~ismember(mode,{'a','r'})
+    error("Mode must be one of the following: {'a','r'}")
+end
+
+if nargin >4
+    nsteps = varargin{1};
+else
+    nsteps = 400;
+end
+% arguments
+%     mode {mustBeMember(mode,["a","r"])} 
+%     mrate {mustBeNumeric}
+%     K {mustBeNumeric}
+%     Sigma {mustBeNumeric}
+% end  
 
 % Folder in which solutions are saved
 if ~isfolder('retreat_advance'); mkdir('retreat_advance'); end
@@ -43,13 +52,18 @@ if ~isfile([filename '.mat'])
     load("variable_grid_300.mat","XA","XH","XU");
     J = 300;
     
+    amax = 1;
+    amin = 1/2;
     % The values of A which we switch between
-    Amin = 1e-25;
-    Amax = 2e-25;
-    
+    % Amin = 1e-25;
+    % Amax = 2e-25;
+    % 
     % Find the steady state for the max xg / minimum A, if it doesn't
     % already exists
-    params.eps = (2*rhoi*g*Hd*(Amin*td)^(1/n))^(-1);
+    %params.eps = (2*rhoi*g*Hd*(Amin*td)^(1/n))^(-1);
+    funcs.accf = @(x) amax*ones(size(x));
+    funcs.intaccf = @(x) amax*x;
+
     if ~isfile(sprintf('retreat_advance/max_xg_m%g_K%g.mat',mrate,K))
         % Finding an initial condition. We first try cases where m or K is
         % a little lower, or failing that we load or make a rough guess from
@@ -70,7 +84,9 @@ if ~isfile([filename '.mat'])
     end
     
     % Same as above, but for min xg/ maximum A
-    params.eps = (2*rhoi*g*Hd*(Amax*td)^(1/n))^(-1);
+    funcs.accf = @(x) amin*ones(size(x));
+    funcs.intaccf = @(x) amin*x;
+
     if ~isfile(sprintf('retreat_advance/min_xg_m%g_K%g.mat',mrate,K))
         % Finding an initial condition
         if isfile(sprintf('retreat_advance/min_xg_m%g_K%g.mat',mrate-.5,K))
@@ -92,13 +108,20 @@ if ~isfile([filename '.mat'])
 
     % Value of A over time
     if mode == 'r'
-        Afunc = @(t) Amax + 0*t;
+        %Afunc = @(t) Amax + 0*t;
+        % Afunc = @(t) Amax - (Amax-Amin)*exp(-20*t);
+        % Afunc = @(t) Amax - (Amax-Amin)*exp(-2*t);
+        aratefunc = @(t) amin + 0*t;
+        %aratefunc = @(t) amin + (amax-amin)*exp(-2*t);
     elseif mode == 'a'
-        Afunc = @(t) Amin + 0*t;
+        %Afunc = @(t) Amin + 0*t;
+        %Afunc = @(t) Amin + (Amax-Amin)*exp(-20*t);
+        aratefunc = @(t) amax + 0*t;
+        %aratefunc = @(t) amax - (amax-amin)*exp(-2*t);
     end 
     
     % Variable time meshgrid (much smaller steps initially)
-    t= linspace(0,sqrt(2),200).^2;
+    t= linspace(0,sqrt(4),nsteps).^2;
 
     % Load initial condition
     HUxNw = load([ICfilename '.mat'],'HUxN').HUxN;
@@ -123,15 +146,18 @@ if ~isfile([filename '.mat'])
     for k = 1:length(t)-1
 
         % Update epsilon for this timestep
-        A = Afunc(t(k));
-        params.eps = (2*rhoi*g*Hd*(A*td)^(1/n))^(-1);
+        % A = Afunc(t(k));
+        % params.eps = (2*rhoi*g*Hd*(A*td)^(1/n))^(-1);
+
+        funcs.accf = @(x) aratefunc(t(k))*ones(size(x));
+        funcs.intaccf = @(x) aratefunc(t(k))*x;
 
         % We continue while fsolve is converging. If at any point it fails,
         % we note the step and move on
         if ex>0
 
             % Timestep forward using fsolve
-            [HUxNw, ~, ex] = fsolve( ...
+            [HUxNw, fval, ex] = fsolve( ...
                 @(huxn) OBJ_FUNC_ice_hyd(huxn, HUxNw([1:J+1 2*J+4:3*J+5]), ...
                 XA, t(k+1)-t(k), funcs, params),...
                 HUxNw,  optimoptions('fsolve','Display','off'));
