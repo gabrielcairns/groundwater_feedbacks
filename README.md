@@ -1,12 +1,14 @@
 This repository includes MATLAB code and data to accompany the manuscript 'Groundwater feedbacks on ice sheets and subglacial hydrology' by GJ Cairns, GP Benham and IJ Hewitt. Code was written by GJ Cairns, with the variable meshgrid in 'variable_grid_300.mat' produced from code by IJ Hewitt.
 
-The script 'make_steady_state_figures.m' can be run to generate the data in 'steady states/', and to create Figures 2, 3, 4 and 5 of the manuscript. The script 'make_steady_state_figures.m' can be run to generate the data in 'retreat_advance/' and create Figures 6, A1 and A2. Other scripts are auxiliary functions used in the above:
+The script 'make_steady_state_figures.m' can be run to generate the data in 'steady states/', and to create Figures 2(a)-(b), 4, 5(a)-(d) and 7 of the revised manuscript. The script 'make_steady_state_figures.m' can be run to generate the data in 'retreat_advance/' and create Figures 8, 9 and 10. The script 'param_sweep.m' generates additional steady state solutions used for Figures 2(c) and 5(e), and 'plot_sweep_results.m' generates these figures. The script 'transition_weertman.m' generates Figures 3 and 6. The other scripts are auxiliary functions used in the above:
 * 'default_values.m' generates default values for parameters, scalings and functions used repeatedly in the solutions,
 * 'find_steady_state.m' generates steady state solutions, including the data in 'steady_states/' and the initial/final states of advance and retreat,
 * 'make_rough_steady_state.m' uses an asymptotic solution to generate an initial guess for the steady state solver,
 * 'OBJ_FUNC_ice_hyd.m' is the objective function to solve the coupled ice and hydrology equations at a certain timestep,
 * 'retreat_or_advance.m' generates the solutions involving grounding line advance and retreat stored in 'retreat_advance/',
-* 'variable_grid_300.mat' contains the meshgrid on which all solutions are found.
+* 'variable_grid_300.mat' contains the meshgrid on which all solutions are found,
+* 'boundary_layer_plotter.m' plots solutions from the parameter sweep, with a stretched grid to zoom in on near the grounding line.
+* 'float_to_tex.m', 'legend_text.m' and 'make_nice_axes.m' are used
 
 The governing equations are solved for *H*, *U*, *x_g* and *N* at a given time on a stretched grid. A 301-point meshgrid is used, with variable spacing so that meshpoints are denser near the grounding line. *H* and *N* are found at whole points, and *U* at half meshpoints.
 
